@@ -1,26 +1,34 @@
 const path = require('path');
-const { mkdir, readdir, copyFile, unlink } = require('fs/promises');
+const { mkdir, readdir, copyFile, access, rm } = require('fs/promises');
 
-const copyDir = async () => {
+const srcPath = path.join(__dirname, 'files');
+const destPath = path.join(__dirname, 'files-copy');
+
+const copyFiles = async (srcPath, destPath) => {
   try {
-    await mkdir(path.join(__dirname, 'files-copy'), { recursive: true });
-    const files = await readdir(path.join(__dirname, 'files'));
-    const filesCopy = await readdir(path.join(__dirname, 'files-copy'));
-    for (const file of files) {
-      if (!filesCopy.includes(file)) {
-        await copyFile(path.join(__dirname, 'files', file), path.join(__dirname, 'files-copy', file));
-        console.log(`${file} has been copied`);
-      }
-    }
-
-    for (const file of filesCopy) {
-      if (!files.includes(file)) {
-        await unlink(path.join(__dirname, 'files-copy', file));
-        console.log(`${file} has been deleted`);
+    const dir = await readdir(srcPath, {withFileTypes: true});
+    for (const item of dir) {
+      if (item.isFile()) {
+        await copyFile(path.join(srcPath, item.name), path.join(destPath, item.name));
+      } else {
+        await mkdir(path.join(destPath, item.name), { recursive: true });
+        copyFiles(path.join(srcPath, item.name), path.join(destPath, item.name));
       }
     }
   } catch (err) {
-    console.error(err);
+    console.error('copyFiles:', err);
+  }
+};
+
+const copyDir = async () => {
+  try {
+    await access(destPath);
+    await rm(destPath, { recursive: true, force: true });
+    await mkdir(destPath, { recursive: true });
+    copyFiles(srcPath, destPath);
+  } catch {
+    await mkdir(destPath, { recursive: true });
+    copyFiles(srcPath, destPath);
   }
 };
 

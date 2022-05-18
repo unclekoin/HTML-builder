@@ -4,9 +4,9 @@ const fs = require('fs');
 
 const dirSourcePath = path.join(__dirname, 'styles');
 const dirDestPath = path.join(__dirname, 'project-dist', 'bundle.css');
-fs.createWriteStream(dirDestPath);
 
 (async () => {
+  fs.createWriteStream(dirDestPath);
   try {
     const files = await readdir(dirSourcePath, {withFileTypes: true});
     for (const file of files) {
